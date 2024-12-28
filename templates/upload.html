@@ -1,0 +1,276 @@
+{% extends 'base/layout.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block content %}
+<form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
+    <div class="h-[90vh] flex items-center justify-center flex-col">
+        <div id="flash-messages" class="hidden p-4 rounded-md shadow-lg text-sm m-2"></div>
+        <div class="border border-blue-200 p-6 rounded-lg">
+            <h2 class="text-lg font-semibold mb-4">Загрузка видео</h2>
+            <div id="drop-area"
+                class="border-2 border-dashed border-gray-400 p-8 rounded-lg flex flex-col items-center justify-center"
+                ondragover="handleDragOver(event)" ondrop="handleFileDrop(event)">
+                <label for="fileInput"
+                    class="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+                    Выберите файл для загрузки
+                </label>
+                <input type="file" id="fileInput" name="video" class="hidden" required>
+                <p class="text-gray-500 mt-2">Или перетащите файл для загрузки</p>
+            </div>
+            <div class="flex justify-between mt-4">
+                <div>
+                    <h3 class="text-sm font-semibold">Требования к видео</h3>
+                    <ul class="text-sm text-gray-600 mt-2 space-y-1">
+                        <li>Длительность до 10 часов</li>
+                        <li>Объём до 10 ГБ</li>
+                        <li>MP4, 4V, WMV, MOV, FLV, MPEG-1, MPEG-2, MPEG-4, MPG, MPEGPS, 3GPP, WebM</li>
+                    </ul>
+                </div>
+
+                <div class="text-right">
+                    <h3 class="text-sm font-semibold">Остались вопросы</h3>
+                    <ul class="text-sm text-gray-600 mt-2 space-y-1">
+                        <li><a href="#" class="text-blue-500">обратитесь в тех. поддержку</a></li>
+                        <li><a href="#" class="text-blue-500">о загрузке роликов</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Диалоговое окно -->
+    <dialog id="video-form-modal" class="rounded-lg p-6 max-w-4xl w-full">
+        <div class="flex justify-between">
+            <h2 class="text-lg font-semibold mb-6">Сведения</h2>
+            <i close-upload-btn class='cursor-pointer flex justify-end m-2 material-icons'>close</i>
+        </div>
+        <div class="md:flex justify-between">
+            <div class="flex flex-col gap-4 w-[40%]">
+                <!-- Название -->
+                <div>
+                    <label for="title" class="block text-sm font-medium text-gray-700">Название</label>
+                    <input type="text" id="title" name="title"
+                        class="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="Введите название">
+                </div>
+
+                <!-- Выбор категорий -->
+                <div>
+                    <label for="tags" class="block text-sm font-medium text-gray-700">Выбор категорий</label>
+                    <select id="tags" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                        <option value="" disabled selected>Выберите тег</option>
+                        {% for category in categories %}
+                        <option id="{{ category.category_id }}" value="{{ category.category_id }}">
+                            {{ category.category_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <span>Нажмите на тег, чтобы удалить его</span>
+                    <div id="selected-tags" class="mt-2 flex space-x-2 flex-wrap">
+                    </div>
+                </div>
+
+                <!-- Описание -->
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-700">Описание</label>
+                    <textarea id="description" name="description"
+                        class="mt-1 block w-full p-2 border border-gray-300 rounded-md" rows="5"
+                        placeholder="Введите описание"></textarea>
+                </div>
+            </div>
+            <div>
+                <!-- Значок -->
+                <div class="mb-6">
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">Значок</h3>
+                    <div class="border-2 border-dashed border-gray-400 p-4 rounded-lg flex flex-col items-center">
+                        <input type="file" id="thumbnail" name="thumbnail" class="hidden" required>
+                        <label for="thumbnail"
+                            class="cursor-pointer bg-gray-200 px-4 py-2 rounded-md text-sm text-gray-600">
+                            Загрузите значок
+                        </label>
+                        <p class="text-sm text-gray-500 mt-2">Рекомендуемое изображение 1920x1080</p>
+                    </div>
+                </div>
+
+                <!-- Аудитория -->
+                <div class="mb-4">
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">Аудитория</h3>
+                    <p class="text-xs text-gray-500 mb-2">Как определить, что видео предназначено для детей?</p>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="radio" name="audience" value="children" class="form-radio text-blue-600">
+                            <span class="ml-2 text-sm text-gray-700">Это видео для детей</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="audience" value="not-for-children"
+                                class="form-radio text-blue-600">
+                            <span class="ml-2 text-sm text-gray-700">Это видео не для детей</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Указать, что видео для взрослых -->
+                <div class="mb-6">
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">Указать, что видео предназначено только для
+                        взрослой
+                        аудитории?</h3>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="radio" name="age-restriction" value="above-18"
+                                class="form-radio text-blue-600">
+                            <span class="ml-2 text-sm text-gray-700">Это видео для зрителей младше 18</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="age-restriction" value="adult-only"
+                                class="form-radio text-blue-600">
+                            <span class="ml-2 text-sm text-gray-700">Это видео для зрителей старше 18</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Кнопка завершить -->
+        <div class="flex justify-end">
+            <button id="finishButton" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+                Завершить
+            </button>
+        </div>
+    </dialog>
+</form>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    const dropArea = document.getElementById('drop-area');
+    const fileInput = document.getElementById('fileInput');
+    const videoFormModal = document.getElementById('video-form-modal');
+    const finishButton = document.getElementById('finishButton');
+    const closeUploadButton = document.querySelector('[close-upload-btn]')
+    const form = document.getElementById('uploadForm');
+
+    function handleDragOver(event) {
+        event.preventDefault(); // предотвращаем стандартное поведение браузера
+        event.dataTransfer.dropEffect = 'copy';
+    }
+
+    function handleFileDrop(event) {
+        event.preventDefault();
+        const files = event.dataTransfer.files;
+        handleFiles(files);
+    }
+
+
+    function handleFiles(files) {
+        console.log(files);
+        openVideoFormModal();
+    }
+
+
+    fileInput.addEventListener('change', (event) => {
+        const files = event.target.files;
+        handleFiles(files);
+    });
+
+
+    function openVideoFormModal() {
+        videoFormModal.showModal();
+    }
+
+    closeUploadButton.addEventListener('click', () => {
+        videoFormModal.close()
+    })
+
+    const selectElement = document.getElementById('tags');
+    const selectedTagsContainer = document.getElementById('selected-tags');
+    const selectedTags = new Set();
+    const tagsArray = []; 
+    
+
+    function addTag(tagId, tagText) {
+        if (!selectedTags.has(tagText)) { 
+            selectedTags.add(tagText);
+    
+            const tagElement = document.createElement('span');
+            tagElement.className = "px-2 py-1 bg-gray-200 text-sm text-gray-800 rounded cursor-pointer";
+            tagElement.textContent = tagText;
+    
+
+            tagElement.addEventListener('click', () => {
+                selectedTags.delete(tagText);
+                tagElement.remove(); 
+    
+                
+                const index = tagsArray.indexOf(tagId);
+                if (index > -1) {
+                    tagsArray.splice(index, 1);
+                }
+            });
+    
+
+            selectedTagsContainer.appendChild(tagElement);
+            tagsArray.push(tagId);
+        }
+    }
+    
+    selectElement.addEventListener('change', () => {
+        const selectedOption = selectElement.options[selectElement.selectedIndex]; 
+        const selectedOptionId = selectedOption.value;
+        const selectedOptionText = selectedOption.textContent;
+    
+        if (selectedOptionId && selectedOptionText) {
+            addTag(selectedOptionId, selectedOptionText);
+        }
+
+        selectElement.value = '';
+    });
+
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const formData = new FormData(form);
+        const tags = Array.from(tagsArray);
+        formData.append('tags', JSON.stringify(tags));
+        finishButton.disabled = true;
+        videoFormModal.close();
+        showFlashMessage('Данные отправляются, пожалуйста, подождите...', 'info');
+
+        $.ajax({
+            url: form.action,
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                videoFormModal.close();
+                showFlashMessage('Данные успешно отправлены!', 'success');
+            },
+            error: function (xhr, status, error) {
+                videoFormModal.close();
+                const errorMessage = xhr.responseJSON?.error || 'Неизвестная ошибка';
+                showFlashMessage(`Произошла ошибка: ${errorMessage}`, 'error');
+            },
+            complete: function () {
+            finishButton.disabled = false;
+        }
+        });
+    });
+
+    function showFlashMessage(message, type) {
+    const flashMessagesDiv = document.getElementById('flash-messages');
+    flashMessagesDiv.textContent = message;
+
+    flashMessagesDiv.className = `p-4 rounded-md shadow-lg text-sm transition-opacity duration-300 ${
+        type === 'success' ? 'bg-green-100 text-green-800' :
+        type === 'error' ? 'bg-red-100 text-red-800' :
+        'bg-blue-100 text-blue-800'
+    }`;
+
+    flashMessagesDiv.classList.remove('hidden');
+
+    setTimeout(() => {
+        flashMessagesDiv.classList.add('hidden');
+    }, 5000);
+}
+</script>
+
+{% endblock %}

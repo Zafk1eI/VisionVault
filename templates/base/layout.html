@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/material-icons@1.13.12/iconfont/material-icons.min.css" rel="stylesheet">
+    <title>Chat Person</title>
+    {% block head %}
+
+    {% endblock %}
+</head>
+
+<body>
+    <header class='bg-white fixed top-0 w-full z-10'>
+        <div class="h-12 flex justify-between items-center mx-6">
+            <div class="flex justify-center items-center gap-4">
+                <button id="toggleSidebar">
+                    <span class="text-gray-500 material-icons">dehaze</span>
+                </button>
+                <a href="/">
+                    <img class="hidden md:block h-16" src="{{ url_for('static', filename='images/icon.svg') }}"
+                        alt="VisionVault">
+                </a>
+            </div>
+            <form action="{{ url_for('routers.search') }}" method="get" class="w-96 flex items-center justify-center">
+                <input name="q" class="w-full h-8 border border-bg-blue-500 p-2 rounded-l focus:outline-none"
+                    type="text" placeholder='Поиск'>
+                <button type="submit" class="h-8 w-8 bg-sky-500 flex justify-center items-center rounded-r">
+                    <span class="text-white material-icons">search</span>
+                </button>
+            </form>
+            <div class="flex justify-center items-center gap-2">
+                <a href="{{ url_for('routers.upload') }}">
+                    <button class="flex justify-center items-center">
+                        <span class="text-gray-500 material-icons">file_upload</span>
+                    </button>
+                </a>
+                <button>
+                    <img class="w-6 h-6" src="{{ url_for('static', filename='images/Notification.png') }}"
+                        alt="notification">
+                </button>
+                <button>
+                    <img class="w-6 h-6" src="{{ url_for('static', filename='images/switch_theme.png') }}"
+                        alt="swtch_theme">
+                </button>
+                {% if is_auth %}
+                <form action="{{ url_for('auth.logout') }}" method="POST">
+                    <button type="submit" class="rounded bg-sky-500 text-white h-8 w-48">
+                        Выход
+                    </button>
+                </form>
+                {% else %}
+                <a href="{{ url_for('auth.login') }}">
+                    <button class="rounded bg-sky-500 text-white h-8 w-48">
+                        Вход и регистрация
+                    </button>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        <hr class="border border-sky-500">
+    </header>
+    <div id="overlay" class="hidden fixed inset-0 bg-black bg-opacity-50"></div>
+
+    <aside id="sidebar"
+        class="z-20 h-screen fixed w-52 bg-white flex justify-center shadow-lg transform -translate-x-full transition-transform duration-300">
+        <div class="w-56 mt-4 px-4">
+            <div class="space-y-2">
+                {% if is_auth %}
+                <div class="flex items-center space-x-2">
+                    <a class="flex items-center space-x-2" href="/category_page/subscribers">
+                        <span class="material-icons">subscriptions</span>
+                        <span>Подписки</span>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <hr class="border-t border-sky-500 my-2">
+
+            <!-- Навигация -->
+            <div class="space-y-2 gap-2">
+                <span class="text-gray-500">Навигация</span>
+                    <div class="flex items-center space-x-2">
+                        <a class="flex items-center space-x-2" href="/category_page/trending_up">
+                            <span class="material-icons">trending_up</span>
+                            <span>В тренде</span>
+                        </a>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <a class="flex items-center space-x-2" href="/category_page/Music">
+                            <span class="material-icons">music_note</span>
+                            <span>Музыка</span>
+                        </a>
+                    </div>
+                <div class="flex items-center space-x-2">
+                    <a class="flex items-center space-x-2" href="/category_page/VideoGames">
+                        <span class="material-icons">sports_esports</span>
+                        <span>Видеоигры</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <a class="flex items-center space-x-2" href="/category_page/Sport">
+                        <span class="material-icons">sports</span>
+                        <span>Спорт</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <a class="flex items-center space-x-2" href="/category_page/News">
+                        <span class="material-icons">public</span>
+                        <span>Новости</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <a class="flex items-center space-x-2" href="/category_page/Education">
+                        <span class="material-icons">school</span>
+                        <span>Обучение</span>
+                    </a>
+                </div>
+            </div>
+            {% if is_auth %}
+            <hr class="border-t border-sky-500 my-2">
+            <!-- Личный аккаунт -->
+            <div class="space-y-2">
+                <span class="text-gray-500">Ваш канал</span>
+                {% if user %}
+                <div class="flex items-center space-x-2">
+                    <a href="{{ url_for('routers.get_channel', user_id=user.user_id) }}"
+                        class="flex items-center space-x-2">
+                        <span class="material-icons leading-none">account_circle</span>
+                        <span>Канал</span>
+                    </a>
+                </div>
+                {% endif %}
+                <div class="flex items-center space-x-2">
+                    <a href="{{ url_for('routers.get_settings') }}" class="flex items-center space-x-2">
+                        <span class="material-icons leading-none">settings</span>
+                        <span>Настройки</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <a href="{{ url_for('routers.get_history') }}" class="flex items-center space-x-2">
+                        <span class="material-icons leading-none">account_circle</span>
+                        <span>История</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <a href="{{ url_for('routers.liked_video') }}" class="flex items-center space-x-2">
+                        <span class="material-icons leading-none">history</span>
+                        <span>Лайки</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <a href="{{ url_for('routers.my_video') }}" class="flex items-center space-x-2">
+                        <span class="material-icons leading-none">video_library</span>
+                        <span>Мои видео</span>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+            <hr class="border-t border-sky-500 my-2">
+
+            <!-- Жалобы и обратная связь -->
+            <div class="space-y-2">
+                <div class="flex items-center space-x-2">
+                    <span class="material-icons">flag</span>
+                    <span>Жалобы</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="material-icons">info</span>
+                    <span>Справка</span>
+                </div>
+                {% if user_role == 'ADMIN' %}
+                <div class="flex items-center space-x-2 text-red-500">
+                    <a href="/admin" class="flex items-center space-x-2">
+                        <span class="material-icons">home</span>
+                        <span>Админ панель</span>
+                    </a>
+                </div>
+                {% endif %}
+                {% if user_role == 'SUPPORT' %}
+                <div class="flex items-center space-x-2 text-red-500">
+                    <a href="/category_page/valid" class="flex items-center space-x-2">
+                        <span class="material-icons">home</span>
+                        <span>Валид. видео</span>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            <div class="mt-4 text-xs text-gray-400">
+                <a href="#" class="block">О нас</a>
+                <a href="/confidentiality" class="block">Конфиденциальность</a>
+                <a href="/agreement" class="block">Пользовательское соглашение</a>
+            </div>
+        </div>
+    </aside>
+    <main>
+        {% block content %}
+
+        {% endblock %}
+    </main>
+    <script src="/static/scripts/layout.js"></script>
+</body>
+
+</html>

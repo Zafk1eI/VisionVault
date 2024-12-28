@@ -1,0 +1,65 @@
+{% extends 'base/layout.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="space-y-2 mt-12">
+        {% for category, message in messages %}
+        <div
+            class="bg-{{ 'green' if category == 'success' else 'red' }}-200 text-{{ 'green' if category == 'success' else 'red' }}-800 p-2 rounded">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+    <div class='mt-14 flex justify-center flex-col'>
+        <h1 class="ml-8 text-[24px]">{{ h1 }}</h1>
+        <div class='w-10/12 grid grid-cols-1 md:grid-cols-4 justify-items-center mt-2 mx-4 col-auto gap-2'>
+            {% for video in videos %}
+            <div id="video-card" class='max-w-72 rounded-md border-none'>
+                <a href="watch/{{ video.video_id }}">
+                    <div id="img-card" class='relative'>
+                        <img class='border min-w-72 w-full rounded-lg border-none max-h-44'
+                            src="{{ url_for('routers.video_thumbnail', video_id=video.video_id) }}" alt=' '>
+                        <span id="duration"
+                            class="absolute bottom-2 right-2 m-2 p-[2px] bg-black rounded bg-opacity-75 font-sans text-xs text-white">
+                            {{ video.duration }}</span>
+                    </div>
+                    <div>
+                        <span class="text-base font-semibold line-clamp-2">{{ video.title }}</span>
+                    </div>
+                </a>
+                <div id='channel' class='flex items-center'>
+                    <a href="/channel/{{ video.user.user_id }}">
+                        {% if video.user.photo_url %}
+                        <img class='w-10 h-10 border rounded-full mr-2 border-none'
+                            src="{{ url_for('routers.get_photo', photo_url=video.user.photo_url) }}" alt='avatar'>
+                        {% else %}
+                        <img class='w-10 h-10 border rounded-full mr-2 border-none'
+                            src="{{ url_for('static', filename='images/avatar.png') }}" alt='avatar'>
+                        {% endif %}
+
+                        <div class='flex flex-col text-gray-500'>
+                            <span id='nickname' class='inline-block align-bottom'>{{ video.user.username }}</span>
+                    </a>
+                    <div class='flex justify-center items-center gap-x-1'>
+                        <span id='views' class="text-nowrap">{{ video.views | format_views }}</span>
+                        <span> • </span>
+                        <span id='times' class="text-nowrap truncate w-24">{{ video.created_at | format_date }}</span>
+                        <a href="/edit_video/{{ video.video_id }}">
+                        <span class="material-icons cursor-pointer text-sky-500">create</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,141 @@
+{% extends 'base/layout.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block content %}
+<div id="video-container" class="flex p-4 w-full md:w-[70%] md:pl-[15%] flex flex-col flex-wrap mt-12">
+    <h1 class="mt-4">
+        <span class="m-auto text-2xl font-semibold">Понравившиеся</span>
+    </h1>
+
+    <!-- Поисковая строка для маленьких экранов -->
+    <input type="text" class="w-full md:hidden mt-4 p-2 border rounded" placeholder="Поиск">
+
+    <!-- Генерация карточек видео -->
+    {% for liked_video in videos %}
+    <div id="video-card" class='max-h-40 rounded-md border-none max-w-[35rem] min-w-[20rem] flex flex-row pt-4 mb-4'>
+        <a href="watch/{{ liked_video.video_id }}">
+            <div id="img-card" class='relative pr-2 max-w-72'>
+                <img class='border rounded-lg border-none min-w-60 md:max-w-64 max-h-36 object-cover'
+                    src="{{ url_for('routers.video_thumbnail', video_id=liked_video.video_id) }}" alt=' '>
+                <span id="duration"
+                    class="absolute right-1 bottom-0.5 m-2 p-[2px] bg-black rounded bg-opacity-75 font-sans text-xs text-white">
+                    {{ liked_video.video.duration }}
+                </span>
+            </div>
+            <div class="flex flex-col">
+                <span class="text-base font-semibold line-clamp-2">{{ liked_video.video.title }}</span>
+        </a>
+        <div class='flex flex-col text-gray-500'>
+            <a href="/channel/{{ liked_video.video.user.user_id }}">
+                <span id='nickname' class='inline-block align-bottom'>{{ liked_video.user.username }}</span>
+            </a>
+            <div class='flex gap-x-1 text-sm font-semibold'>
+                <span id='views' class="text-nowrap">{{ liked_video.video.views | format_views }}</span>
+                <span> • </span>
+                <span id='times' class="text-nowrap">{{ liked_video.video.created_at | format_date }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% if first_liked_video %}
+    <div class="hidden lg:flex fixed right-10 top-5 bottom-5 xl:mr-40 mr-20 flex flex-col items-center justify-center mb-0">
+        <div class="bg-gradient-to-b from-gray-800 to-gray-900 rounded-lg shadow-lg p-4 w-96 mt-12 h-screen">
+            <img class='border rounded-lg border-none w-full max-h-44 object-cover'
+                src="{{ url_for('routers.video_thumbnail', video_id=first_liked_video.video_id) }}" alt=''>
+            <div class='border rounded-lg border-none w-full max-h-44 object-cover'></div>
+            <h2 class="text-white text-xl font-semibold mb-2">Понравившиеся</h2>
+            <div class="flex justify-between">
+                <p class="text-gray-400 text-sm mb-4">{{ video_count }} видео</p>
+                <p class="text-gray-400 text-sm mb-4">Обновлено {{ first_liked_video.created_at | format_date }}</p>
+            </div>
+            <div class="flex items-center justify-between mb-4">
+                <button class="text-gray-400">
+                    <i class="fas fa-ellipsis-h"></i>
+                </button>
+            </div>
+            <div class="flex items-center justify-between">
+                <a href="watch/{{ first_liked_video.video_id }}">
+                    <button class="bg-black text-white py-2 px-4 rounded-full flex items-center">
+                        Воспроизвести
+                    </button>
+                </a>
+                <a href="">
+                    <button class="bg-black text-white py-2 px-4 rounded-full flex items-center">
+                        Перемешать
+                    </button>
+                </a>
+            </div>
+        </div>
+    </div>
+{% endif %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        var offset = 20;
+        var limit = 20;
+
+        function loadVideos() {
+            console.log("Loading more videos...");
+
+            $.get('/load_more_videos', { offset: offset }, function (data) {
+                console.log(data); 
+
+                if (data.videos && data.videos.length > 0) {
+                    data.videos.forEach(function (video) {
+                        const thumbnailUrl = `/get_thumbnail/${video.video_id}/thumbnail.jpg`;
+                        const videoHtml = `
+                        <div id="video-card" class='max-h-40 rounded-md border-none max-w-[35rem] min-w-[20rem] flex flex-row pt-4 mb-4'>
+                            <a href="watch/${video.video_id}">
+                                <div id="img-card" class='relative pr-2 max-w-72'>
+                                    <img class='border rounded-lg border-none min-w-60 md:max-w-64 max-h-36 object-cover'
+                                        src="${thumbnailUrl}" alt=" ">
+                                    <span id="duration"
+                                        class="absolute right-1 bottom-0.5 m-2 p-[2px] bg-black rounded bg-opacity-75 font-sans text-xs text-white">
+                                        ${video.duration}
+                                    </span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-base font-semibold line-clamp-2">${video.title}</span>
+
+                            </a>
+                            <div class='flex flex-col text-gray-500'>
+                                <a href="/channel/name">
+                                    <span id='nickname' class='inline-block align-bottom'>${video.username}</span>
+                                </a>
+                                <div class='flex gap-x-1 text-sm font-semibold'>
+                                    <span id='views' class="text-nowrap">${video.views}</span>
+                                    <span> • </span>
+                                    <span id='times' class="text-nowrap">${video.created_at}</span>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                    `;
+                        $('#video-container').append(videoHtml);
+                    });
+                    offset += limit;
+                } else {
+                    console.log("No more videos to load.");
+                }
+            });
+        }
+
+        var debounceTimer;
+        $(window).scroll(function () {
+            if ($(window).scrollTop() + $(window).height() >= $(document).height() - 300) {
+                clearTimeout(debounceTimer);
+
+                debounceTimer = setTimeout(function () {
+                    loadVideos();
+                }, 200); 
+            }
+        });
+    });
+</script>
+
+{% endblock %}

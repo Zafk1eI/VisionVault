@@ -1,0 +1,155 @@
+{% extends 'base/layout.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block content %}
+
+<div class="ml-24 flex flex-col mt-16">
+    <div class="flex flex-row">
+        {% if user.photo_url %}
+        <img class='w-[160px] h-[160px] border rounded-full mx-2 border-none'
+            src="{{ url_for('routers.get_photo', photo_url=user.photo_url) }}" alt='avatar'>
+        {% else %}
+        <img class='w-[160px] h-[160px] border rounded-full mx-2 border-none'
+            src="{{ url_for('static', filename='images/avatar.png') }}" alt='avatar'>
+        {% endif %}
+        <div class="flex flex-col justify-center">
+            <span class="text-4xl">{{ user.username }}</span>
+            <div class="text-gray-500">
+                <span>{{ user.subscriptions | format_subscribers }}</span>
+                <span> • </span>
+                <span id='times' class="text-nowrap">{{ count_video }} видео</span>
+            </div>
+            <span>{{ user.description or 'Описания еще нет' }}</span>
+            <div class="mt-4 flex justify-between">
+                {% if is_subscribed %}
+                <button class="border-2 px-4 rounded-lg border-gray-500 h-8 text-gray-500 font-bold"
+                    id="unsubscribe_button" data-user-id="{{ user.user_id }}">Вы подписаны</button>
+                {% else %}
+                <button class="border-2 px-4 rounded-lg border-sky-500 h-8 text-sky-500 font-bold" id="subscribe_button"
+                    data-user-id="{{ user.user_id }}">Подписаться</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% if best_video %}
+    <div id="video-card" class='rounded-md border-none flex flex-row pt-4 ml-4'>
+        <div id="img-card" class='relative pr-2'>
+            <a href="/watch/{{ best_video.video_id }}">
+            <img class='border rounded-lg border-none w-[522px] h-[300px] object-cover'
+                src="/get_thumbnail/{{ best_video.video_id }}/thumbnail.jpg" alt='{{ best_video.title }}'>
+            <span id="duration"
+                class="absolute right-3 bottom-0.5 m-2 p-[2px] bg-black rounded bg-opacity-75 font-sans text-xs text-white">
+                {{ best_video.duration }}</span>
+        </div>
+        <div class="w-4/12 flex flex-col">
+            <span class="text-base font-semibold line-clamp-2">{{ best_video.title }}</span>
+            </a>
+            <div class='text-gray-500 flex gap-x-1 text-sm font-semibold'>
+                <span id='views' class="text-nowrap">{{ best_video.views | format_views }}</span>
+                <span> • </span>
+                <span id='times' class="text-nowrap">{{ best_video.created_at | format_date }}</span>
+            </div>
+            {% if best_video.description %}
+            <span class="mt-4">
+                {{ best_video.description }}
+            </span>
+            {% else %}
+            <span class="mt-4 italic text-gray-500">В этом видео нет описания.</span>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <p>Лучшее видео не найдено.</p>
+    {% endif %}
+    <span class="block">Видео</span>
+    <div class='w-10/12 grid grid-cols-1 md:grid-cols-4 justify-items-center mt-2 mx-4 col-auto gap-36'>
+        {% for video in videos %}
+        {% if video %}
+        <div id="video-card" class='min-w-72 rounded-md border-none'>
+            <div id="img-card" class='relative'>
+                <a href="watch/{{ video.video_id }}">
+                <img class='border min-w-72 w-full rounded-lg border-none max-h-44'
+                    src="/get_thumbnail/{{ video.video_id }}/thumbnail.jpg" alt='{{ video.title }}'>
+                <span id="duration"
+                    class="absolute bottom-2 right-2 m-2 p-[2px] bg-black rounded bg-opacity-75 font-sans text-xs text-white">{{
+                    video.duration }}</span>
+            </div>
+            <div>
+                <span class="w-10/12 text-base font-semibold line-clamp-2">{{ video.title }}</span>
+                </a>
+            </div>
+            <div id='channel' class='flex items-center'>
+                <div class='flex flex-col text-gray-500'>
+                    <div class='flex justify-center items-center gap-x-1'>
+                        <span id='views' class="text-nowrap">{{ video.views | format_views }}</span>
+                        <span> • </span>
+                        <span id='times' class="text-nowrap">{{ video.created_at | format_date }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <p>Видео не найдено.</p>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $(document).on('click', '#subscribe_button', function () {
+            const $button = $(this);
+            const channelId = $button.attr('data-user-id');
+
+            $.ajax({
+                url: `/subscribe/${channelId}`,
+                method: 'POST',
+                success: function (response) {
+                    if (response.success) {
+                        $button.text('Вы подписаны');
+                        $button.prop('id', 'unsubscribe_button');
+                        $button.removeClass('border-sky-500 text-sky-500');
+                        $button.addClass('border-gray-500 text-gray-500');
+                    } else {
+                        alert(response.error);
+                    }
+                },
+                error: function (xhr) {
+                    const errorMsg = xhr.responseJSON?.error || 'Ошибка при подписке';
+                    alert(errorMsg);
+                }
+            });
+        });
+    });
+
+
+    $(document).ready(function () {
+        $(document).on('click', '#unsubscribe_button', function () {
+            const $button = $(this);
+            const channelId = $button.attr('data-user-id');
+
+            $.ajax({
+                url: `/unsubscribe/${channelId}`,
+                method: 'POST',
+                success: function (response) {
+                    if (response.success) {
+                        $button.text('Подписаться');
+                        $button.prop('id', 'subscribe_button');
+                        $button.removeClass('border-gray-500 text-gray-500');
+                        $button.addClass('border-sky-500 text-sky-500');
+                    } else {
+                        alert(response.error);
+                    }
+                },
+                error: function (xhr) {
+                    const errorMsg = xhr.responseJSON?.error || 'Ошибка при отписке';
+                    alert(errorMsg);
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

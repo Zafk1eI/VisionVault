@@ -1,0 +1,78 @@
+{% extends 'base/layout.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center h-screen">
+    <div class="flex flex-col gap-2 justify-center text-xl font-semibold">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="space-y-2">
+            {% for category, message in messages %}
+            <div
+                class="bg-{{ 'green' if category == 'success' else 'red' }}-200 text-{{ 'green' if category == 'success' else 'red' }}-800 p-2 rounded">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+        <div class="flex gap-6 justify-center text-xl font-semibold">
+            <a href="/auth/login">
+                <span id="login-tab" class="cursor-pointer">Вход</span>
+            </a>
+            <span id="register-tab" class="cursor-pointer text-sky-500">Регистрация</span>
+        </div>
+        <form id="register-form" class='flex flex-col items-center mt-2' action="{{ url_for('auth.register_user') }}"
+            enctype="application/x-www-form-urlencoded" method='POST'>
+            <div class="flex flex-col justify-center gap-2 w-[320px]">
+                <div>
+                    <label for="first_name" class="block text-sm font-medium text-gray-900">Nickname</label>
+                    <input name="register_nickname" type="text" id="first_name"
+                        class="bg-indigo-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:outline-none block w-full p-2.5"
+                        placeholder="weii" required />
+                </div>
+                <div>
+                    <label for="register_email" class="block text-sm font-medium text-gray-900">E-mail</label>
+                    <input name="register_email" type="text" id="register_email"
+                        class="bg-indigo-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:outline-none block w-full p-2.5"
+                        placeholder="your@mail.ru" required />
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-900">Password</label>
+                    <input name="register_password" type="password" id="password"
+                        class="bg-indigo-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:outline-none block w-full p-2.5"
+                        placeholder="Введите пароль" required />
+                </div>
+                <div>
+                    <label for="repeat_password" class="block text-sm font-semibold text-gray-900">Repeat
+                        password</label>
+                    <input name="register_repeat_password" type="password" id="repeat_password"
+                        class="bg-indigo-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:outline-none block w-full p-2.5"
+                        placeholder="Введите пароль" required />
+                </div>
+                <div class="flex items-center">
+                    <input id="checkbox" type="checkbox" value=""
+                        class="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded" required>
+                    <label for="checkbox" class="ml-2 text-sm font-semibold text-gray-900">Я даю согласие на
+                        обработку пер. данных</label>
+                </div>
+                <button class='border rounded w-full bg-sky-500 h-10 text-white' type='submit'>Регистрация</button>
+                <span class="w-72 text-xs mx-4">
+                    Регистрируясь на VisionVault, вы соглашаетесь с <a href="#" class="text-sky-500">пользовательским
+                        соглашением</a> и <a href="#" class="text-sky-500">политикой конфиденциальносьти</a>
+                </span>
+            </div>
+        </form>
+        <div class="flex justify-center mt-2">
+            <button
+                class="w-[320px] flex justify-center items-center gap-2 border rounded border-sky-500 text-black h-10">
+                <img src="{{ url_for('static', filename='images/flat-color-icons_google.png') }}" alt="google">
+                Продолжить с Google
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

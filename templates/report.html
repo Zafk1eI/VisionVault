@@ -1,0 +1,34 @@
+{% extends 'base/layout.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-row justify-center gap-24">
+    <div class="flex flex-col ml-4 md:ml-24 w-full md:w-6/12 p-2">
+        <h1 class="text-2xl md:text-3xl">Спасибо за помощь</h1>
+        <span class="text-sm md:text-base leading-relaxed">
+            На VisionVault каждый пользователь имеет возможность сообщить о нарушениях правил сообщества. Когда
+            поступает жалоба, мы проводим проверку видео. Далее:
+            <ul class="list-disc list-inside">
+                <li>Если обнаружены нарушения правил, мы удаляем видео.</li>
+                <li>В случае, если контент не подходит для младшей аудитории, мы устанавливаем соответствующие
+                    возрастные ограничения.</li>
+                <li>Видео несоответствует установленным категориям.</li>
+                <li>Если видео уже было удалено автором, мы скрываем жалобу.</li>
+            </ul>
+            Спасибо за вашу помощь в поддержании безопасной и увлекательной среды на VisionVault!"
+        </span>
+    </div>
+    <div class="hidden md:block w-[251px] h-[251px]">
+        <img src="{{ url_for('static', filename='images/report_icon.svg') }}" alt="">
+    </div>
+</div>
+<hr class="border border-sky-500">
+<div class="flex flex-col justify-center items-center mt-4 font-semibold">
+    <span>Вы еще не сообщали о нарушениях в видео</span>
+</div>
+
+{% endblock %}

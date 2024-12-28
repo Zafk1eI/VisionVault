@@ -1,0 +1,420 @@
+{% extends 'base/layout.html' %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdn.plyr.io/3.7.6/plyr.css" />
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script src="https://cdn.plyr.io/3.7.6/plyr.js"></script>
+<style>
+    .plyr__progress {
+        flex-grow: 1;
+    }
+
+    .progress-container {
+        display: flex;
+        width: 100%;
+    }
+
+    .plyr__volume {
+        width: 100%;
+    }
+
+    .play-container,
+    .duration-container {
+        display: flex;
+        align-items: center;
+        flex-direction: row;
+    }
+
+    .plyr__controls {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .fullscreen-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: row;
+    }
+
+    .second-row-container {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        flex-direction: row;
+    }
+
+    .plyr {
+        border: 2px;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class='flex flex-col md:flex-row justify-between my-4 mx-6 mt-16'>
+    <!-- videoplayer -->
+    <div class='w-[80%] mr-4'>
+        <video id="player" autoplay controls crossorigin playsinline>
+            <source class="video_id" id="video-source" video-id="{{ video.video_id }}" src="" type="application/Mp4">
+        </video>
+        <span class='block mt-2 text-xl font-semibold'>{{ video.title }}</span>
+        <div class='flex gap-x-1 text-gray-500 font-semibold'>
+            <span id='views' class="text-nowrap">{{ video.views | format_views }}</span>
+            <span> • </span>
+            <span id='times' class="text-nowrap">{{ video.created_at | format_date }}</span>
+        </div>
+        <div class='flex items-center justify-between'>
+            <div class='flex flex-row items-center'>
+                {% if video.user.photo_url %}
+                <img class='w-10 h-10 border rounded-full border-none bg-slate-600'
+                    src="{{ url_for('routers.get_photo', photo_url=video.user.photo_url) }}" alt='avatar'>
+                {% else %}
+                <img class='w-10 h-10 border rounded-full mr-2 border-none'
+                    src="{{ url_for('static', filename='images/avatar.png') }}" alt='avatar'>
+                {% endif %}
+                <div class='flex flex-col text-sm font-semibold px-2'>
+                    <span id="channel-name">{{ video.user.username }}</span>
+                    <span class='text-gray-500'>{{ video.user.subscriptions | format_subscribers }}</span>
+                </div>
+                {% if video.is_subscribed %}
+                <button class="border-2 px-4 rounded-lg border-gray-500 h-8 text-gray-500 font-bold"
+                    id="unsubscribe_button" data-user-id="{{ video.user_id }}">Вы подписаны</button>
+                {% else %}
+                <button class="border-2 px-4 rounded-lg border-sky-500 h-8 text-sky-500 font-bold" id="subscribe_button"
+                    data-user-id="{{ video.user_id }}">Подписаться</button>
+                {% endif %}
+            </div>
+            <div class='flex flex-row items-center gap-2'>
+                <div class='inline-flex cursor-pointer' id='likes'>
+                    <svg width="28" height="28" viewBox="0 0 24 24"
+                        fill="{{ '#1485BC' if user_rating == True else 'black' }}" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" clip-rule="evenodd"
+                            d="M2 9.5H7.5V21.5H2V9.5ZM3 10.5V20.5H6.5V10.5H3Z" />
+                        <path fill-rule="evenodd" clip-rule="evenodd"
+                            d="M16.1003 4.38456C16.4779 3.3776 15.2174 2.56588 14.4569 3.32633L7.5 10.2832V20.5001H16.7086C17.836 20.5001 18.8239 19.7456 19.1205 18.6579L20.8286 12.3948C21.0889 11.4406 20.3706 10.5001 19.3815 10.5001H14.5285C14.3645 10.5001 14.2109 10.4197 14.1175 10.2849C14.0241 10.1501 14.0028 9.9781 14.0603 9.82455L16.1003 4.38456ZM6.84413 9.52488L13.7498 2.61922C15.2707 1.09832 17.7919 2.72174 17.0367 4.73568L15.25 9.50011H19.3815C21.0299 9.50011 22.2271 11.0676 21.7934 12.6579L20.0853 18.921C19.67 20.4437 18.2869 21.5001 16.7086 21.5001H7C6.72386 21.5001 6.5 21.2763 6.5 21.0001V10.0001C6.5 9.77839 6.64431 9.59038 6.84413 9.52488Z" />
+                    </svg>
+                    <span>{{ video.likes }}</span>
+                </div>
+                <div class='inline-flex cursor-pointer' id='dislike'>
+                    <svg width="28" height="28" viewBox="0 0 24 24"
+                        fill="{{ '#1485BC' if user_rating == False else 'black' }}" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" clip-rule="evenodd"
+                            d="M21.8829 14.0205L16.3829 14.0205L16.3829 2.02051L21.8829 2.02051L21.8829 14.0205ZM20.8829 13.0205L20.8829 3.02051L17.3829 3.02051L17.3829 13.0205L20.8829 13.0205Z" />
+                        <path fill-rule="evenodd" clip-rule="evenodd"
+                            d="M7.7826 19.136C7.40499 20.143 8.66558 20.9547 9.42604 20.1942L16.3829 13.2373L16.3829 3.02047L7.17432 3.02047C6.04695 3.02047 5.05905 3.77502 4.76241 4.86267L3.05429 11.1258C2.79405 12.08 3.51238 13.0205 4.50144 13.0205L9.35443 13.0205C9.51842 13.0205 9.67199 13.1009 9.76539 13.2357C9.8588 13.3705 9.88018 13.5425 9.8226 13.696L7.7826 19.136ZM17.0388 13.9957L10.1331 20.9014C8.61224 22.4223 6.09104 20.7988 6.84627 18.7849L8.63293 14.0205L4.50144 14.0205C2.853 14.0205 1.65579 12.453 2.08953 10.8627L3.79765 4.59955C4.21294 3.07684 5.596 2.02047 7.17432 2.02047L16.8829 2.02047C17.1591 2.02047 17.3829 2.24433 17.3829 2.52047L17.3829 13.5205C17.3829 13.7422 17.2386 13.9302 17.0388 13.9957Z" />
+                    </svg>
+                    <span>{{ video.dislikes }}</span>
+                </div>
+                <button class='flex justify-between items-center'>
+                    <span width='24' height='24' class='material-icons'>flag</span>
+                    <span class="hidden md:block">Пожаловаться</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- category -->
+        <div class='flex flex-row py-2 gap-2'>
+            {% for category in video.categories %}
+            <div class='px-4 py-1 text-white border rounded-lg bg-gray-800'>
+                <span>{{ category.category_name }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="flex flex-col">
+            <form id="comment-form">
+                <span class='block text-2xl font-semibold'>Комментарии</span>
+                <div class='flex flex-row items-center gap-2'>
+                    {% if video.user.photo_url %}
+                    <img class='w-10 h-10 border rounded-full border-none bg-slate-600'
+                        src="{{ url_for('routers.get_photo', photo_url=video.user.photo_url) }}" alt='avatar'>
+                    {% else %}
+                    <img class='w-10 h-10 border rounded-full mr-2 border-none'
+                        src="{{ url_for('static', filename='images/avatar.png') }}" alt='avatar'>
+                    {% endif %}
+                    <div class="w-full p-4">
+                        <div class="flex items-center justify-center space-x-2">
+                            <input type="text" name="comment" placeholder="Enter your comment"
+                                class="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
+                            <button type="submit"
+                                class="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                <i class="mt-1 material-icons">send</i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            <div id="comments"></div>
+        </div>
+    </div>
+
+    <div id="video-list" class="flex flex-col items-center">
+        <div class="container mx-auto p-4">
+            <div class="max-w-lg mx-auto bg-white rounded-lg shadow-lg">
+                <div class="flex items-center justify-between p-4 border-b">
+                    <h2 class="text-xl font-semibold">
+                        Чат
+                    </h2>
+                    <button class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-ellipsis-v">
+                        </i>
+                    </button>
+                </div>
+                <div class="p-4 h-96 overflow-y-auto">
+                </div>
+                <div class="flex items-start mb-4">
+                    <div class="bg-sky-200 p-3 rounded-lg">
+                        <p class="text-sm">
+                            Я делаю проект
+                        </p>
+                        <span class="text-xs text-gray-500">
+                            9:01
+                        </span>
+                    </div>
+                </div>
+                <div class="p-4 border-t">
+                    <div class="flex items-center">
+                        <input class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Напишите сообщение" type="text" />
+                        <button class="ml-2 text-blue-500 hover:text-blue-700">
+                            <i class="fas fa-paper-plane">
+                            </i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="/static/scripts/ajax.js"></script>
+<script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const roomId = "{{ room_id }}"; // Получаем roomId из шаблона
+        const socket = io.connect();  // Подключаемся к сокету
+        let isSocketUpdate = false;  // Переменная для предотвращения бесконечного цикла обновлений
+
+        const video = document.getElementById('player');
+        if (!video) {
+            console.error('Video element not found');
+            return;
+        }
+
+        const hlsSource = "{{ url_for('routers.get_file_for_player', video_id=video.video_id, filename='master.m3u8') }}";
+        socket.emit('join_room', { room: roomId });  // Подключаемся к комнате
+        console.log('HLS Source URL:', hlsSource);
+
+        if (Hls.isSupported()) {
+            const hls = new Hls({
+                startLevel: -1,
+                autoStartLoad: true,
+                startFrag: -1,
+                smoothQualitySwitching: true,
+            });
+
+            hls.loadSource(hlsSource);
+            hls.attachMedia(video);
+
+            hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+                console.log('HLS Manifest loaded:', data);
+                const availableQuantities = hls.levels.map((l) => l.height);
+
+                const player = new Plyr(video, {
+                    ratio: '16:8',
+                    controls: [
+                        'play-large',
+                        'play',
+                        'progress',
+                        'current-time',
+                        'duration',
+                        'mute',
+                        'volume',
+                        'settings',
+                        'fullscreen',
+                    ],
+                    quality: {
+                        options: availableQuantities,
+                        forced: true,
+                        onChange: (e) => updateQuality(e),
+                    },
+                    autopause: true,
+                    i18n: {
+                        restart: 'Перезапустить',
+                        play: 'Воспроизвести',
+                        pause: 'Пауза',
+                        mute: 'Выключить звук',
+                        unmute: 'Включить звук',
+                        speed: 'Скорость',
+                        quality: 'Качество',
+                        fullscreen: 'Полноэкранный режим',
+                    },
+                });
+
+                player.on('ready', () => {
+                    console.log('Plyr ready');
+
+                    setupCustomControls(player);
+                });
+
+                player.on('play', () => {
+                    if (!isSocketUpdate) {
+                        socket.emit('video_action', {
+                            room: roomId,
+                            action: 'play',
+                            current_time: player.currentTime,
+                        });
+                    }
+                    isSocketUpdate = false;
+                });
+
+                player.on('pause', () => {
+                    if (!isSocketUpdate) {
+                        socket.emit('video_action', {
+                            room: roomId,
+                            action: 'pause',
+                            current_time: player.currentTime,
+                        });
+                        console.log('Action:', 'pause');
+                    }
+                    isSocketUpdate = false;
+                });
+
+                player.on('seeked', () => {
+                    if (!isSocketUpdate) {
+                        socket.emit('video_action', {
+                            room: roomId,
+                            action: 'seek',
+                            current_time: player.currentTime,
+                        });
+                        console.log('Seek emitted:', player.currentTime);
+                        isSocketUpdate = false;
+                    }
+                });
+
+                socket.on('sync_video', function (data) {
+                    if (!player) return;
+
+                    isSocketUpdate = true;
+                    console.log('Sync video action received:', data.action);
+                    switch (data.action) {
+                        case 'play':
+                            player.play().catch((error) => {
+                                console.error('Error playing video:', error);
+                            });
+                            break;
+                        case 'pause':
+                            if (!player.paused) {
+                                player.pause();
+                                console.log('Video paused successfully');
+                            } else {
+                                console.log('Video already paused');
+                            }
+                            break;
+                        case 'seek':
+                            if (Math.abs(player.currentTime - data.current_time) > 0.5) {
+                                player.currentTime = data.current_time;
+                            }
+                            player.play()
+                            break;
+                        default:
+                            console.warn(`Unknown action: ${data.action}`);
+                    }
+                    isSocketUpdate = false;
+                });
+
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    console.error('HLS.js Error:', data);
+                });
+
+                hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
+                    console.log('Switched to level', data.level);
+                });
+
+                window.hls = hls;
+            });
+        } else {
+            console.error('HLS.js is not supported in this browser');
+        }
+
+        function updateQuality(newQuality) {
+            if (!window.hls) {
+                console.error('Hls is not initialized');
+                return;
+            }
+
+            window.hls.levels.forEach((level, levelIndex) => {
+                if (level.height === newQuality) {
+                    window.hls.currentLevel = levelIndex;
+                    console.log('Quality updated to:', newQuality);
+                }
+            });
+        }
+
+        socket.on('user_joined', (data) => {
+            console.log(`User joined the room: ${data.user}`);
+        });
+
+        socket.on('user_left', (data) => {
+            console.log(`User left the room: ${data.user}`);
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('WebSocket connection error:', error);
+        });
+
+        window.addEventListener('beforeunload', () => {
+            socket.emit('leave_room', { room: roomId });
+            socket.disconnect();
+        });
+
+        function setupCustomControls(player) {
+            const controls = document.querySelector('.plyr__controls');
+            const progressBar = document.querySelector('.plyr__progress__container');
+            const playButton = document.querySelector('[data-plyr="play"]');
+            const currentDuration = document.querySelector('.plyr__time--current');
+            const volume = document.querySelector('.plyr__volume');
+            const timeDuration = document.querySelector('.plyr__time--duration');
+            const fullscreenButton = document.querySelector('[data-plyr="fullscreen"]');
+            const settingsButton = document.querySelector('.plyr__menu');
+
+            if (!progressBar || !playButton || !currentDuration || !volume || !timeDuration || !fullscreenButton || !settingsButton) {
+                console.error('Some controls are missing');
+                return;
+            }
+
+            const progressContainer = document.createElement('div');
+            progressContainer.classList.add('progress-container');
+            progressContainer.appendChild(progressBar);
+            controls.insertBefore(progressContainer, controls.firstChild);
+
+            const durationContainer = document.createElement('div');
+            durationContainer.classList.add('duration-container');
+            durationContainer.appendChild(currentDuration);
+            durationContainer.appendChild(timeDuration);
+
+            const playContainer = document.createElement('div');
+            playContainer.classList.add('play-container');
+            playContainer.appendChild(playButton);
+            playContainer.appendChild(durationContainer);
+            playContainer.appendChild(volume);
+
+            const fullscreenContainer = document.createElement('div');
+            fullscreenContainer.classList.add('fullscreen-container');
+            fullscreenContainer.appendChild(settingsButton);
+            fullscreenContainer.appendChild(fullscreenButton);
+
+            const secondRowControls = document.createElement('div');
+            secondRowControls.classList.add('second-row-container');
+            secondRowControls.appendChild(playContainer);
+            secondRowControls.appendChild(fullscreenContainer);
+
+            progressContainer.insertAdjacentElement('afterend', secondRowControls);
+        }
+    });
+
+</script>
+
+{% endblock %}

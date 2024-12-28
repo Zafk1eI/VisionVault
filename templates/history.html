@@ -1,0 +1,78 @@
+{% extends 'base/layout.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block content %}
+<div class="p-4 w-full md:w-[70%] md:pl-[15%] flex-wrap mt-12">
+    <h1 class="mt-4">
+        <span class="m-auto text-2xl font-semibold">История просмотров</span>
+    </h1>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="space-y-2">
+        {% for category, message in messages %}
+        <div
+            class="bg-{{ 'green' if category == 'success' else 'red' }}-200 text-{{ 'green' if category == 'success' else 'red' }}-800 p-2 rounded">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+    <!-- Поисковая строка для маленьких экранов -->
+    <input type="text" class="w-full md:hidden mt-4 p-2 border rounded" placeholder="Поиск">
+
+    <!-- Дата -->
+    {% for date, videos in grouped_history.items() %}
+    <span class="block mt-8 font-semibold text-lg">{{ date }}</span>
+
+    <!-- Генерация карточек видео -->
+    {% for item in videos %}
+    <div id="video-card" class='max-h-40 rounded-md border-none max-w-[35rem] min-w-[20rem] flex flex-row pt-4 mb-4'>
+        <a href="watch/{{ item.video_id }}">
+            <div id="img-card" class='relative pr-2 max-w-72'>
+                <img class='border rounded-lg border-none min-w-60 md:max-w-64 max-h-36 object-cover'
+                    src="{{ url_for('routers.video_thumbnail', video_id=item.video_id) }}" alt=' '>
+                <span id="duration"
+                    class="absolute right-1 bottom-0.5 m-2 p-[2px] bg-black rounded bg-opacity-75 font-sans text-xs text-white">
+                    {{ item.video.duration }}
+                </span>
+            </div>
+            <div class="flex flex-col">
+                <span class="text-base font-semibold line-clamp-2">{{ item.video.title }}</span>
+        </a>
+        <div class='flex flex-col text-gray-500'>
+            <a href="/channel/{{ item.video.user.user_id }}">
+                <span id='nickname' class='inline-block align-bottom'>{{ item.user.username }}</span>
+            </a>
+            <div class='flex gap-x-1 text-sm font-semibold'>
+                <span id='views' class="text-nowrap">{{ item.video.views | format_views }}</span>
+                <span> • </span>
+                <span id='times' class="text-nowrap">{{ item.video.created_at | format_date }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endfor %}
+</div>
+
+<div class="hidden lg:flex fixed right-10 top-5 xl:mr-40 mr-20  flex flex-col items-center justify-center h-full">
+    <input type="text" class="p-2 mb-4 w-[200px] border rounded" placeholder="Поиск по истории">
+    <a href="{{ url_for('routers.clear_history') }}">
+        <span class="mb-2 cursor-pointer text-blue-500 hover:underline">Очистить историю</span>
+    </a>
+    {% if user.retain_history == True %}
+    <a href="{{ url_for('routers.save_history') }}">
+        <span class="cursor-pointer text-blue-500 hover:underline">Не сохранять историю</span>
+    </a>
+    {% else %}
+    <a href="{{ url_for('routers.save_history') }}">
+        <span class="cursor-pointer text-blue-500 hover:underline">Cохранять историю</span>
+    </a>
+    {% endif %}
+</div>
+
+{% endblock %}
